@@ -31,5 +31,9 @@ export class EquipmentController {
   remove(@Req() request: AuthenticatedRequest, @Param("id") id: string) {
     return this.equipment.remove(request.user.sub, id);
   }
-}
 
+  @Post(":id/connectivity")
+  checkConnectivity(@Req() request: AuthenticatedRequest, @Param("id") id: string) {
+    return this.equipment.checkConnectivity(request.user.sub, id);
+  }
+}

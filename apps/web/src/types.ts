@@ -28,9 +28,15 @@ export interface CommandLog {
   user: { name: string };
 }
 
+export interface ConnectivityResult {
+  online: boolean;
+  checkedAt: string;
+  responseTimeMs: number;
+  message: string;
+}
+
 export interface User {
   id: string;
   name: string;
   email: string;
 }
-

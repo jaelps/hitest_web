@@ -1,6 +1,9 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import { createConnection } from "node:net";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateEquipmentDto, UpdateEquipmentDto } from "./equipment.dto";
+
+const CONNECTIVITY_TIMEOUT_MS = 3000;
 
 @Injectable()
 export class EquipmentService {
@@ -28,6 +31,33 @@ export class EquipmentService {
     await this.findAuthorizedEquipment(userId, equipmentId);
     await this.prisma.equipment.delete({ where: { id: equipmentId } });
     return { deleted: true };
+  }
+
+  async checkConnectivity(userId: string, equipmentId: string) {
+    const equipment = await this.findAuthorizedEquipment(userId, equipmentId);
+    const startedAt = Date.now();
+    const online = await new Promise<boolean>((resolve) => {
+      const socket = createConnection({ host: equipment.ip, port: equipment.port });
+      let settled = false;
+      const finish = (connected: boolean) => {
+        if (settled) return;
+        settled = true;
+        socket.destroy();
+        resolve(connected);
+      };
+
+      socket.setTimeout(CONNECTIVITY_TIMEOUT_MS);
+      socket.once("connect", () => finish(true));
+      socket.once("timeout", () => finish(false));
+      socket.once("error", () => finish(false));
+    });
+
+    return {
+      online,
+      checkedAt: new Date().toISOString(),
+      responseTimeMs: Date.now() - startedAt,
+      message: online ? "Conexão TCP estabelecida." : "Sem resposta na porta cadastrada."
+    };
   }
 
   async findAuthorizedEquipment(userId: string, equipmentId: string) {

@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from "react";
 import {
   Activity, AirVent, ArrowUpRight, Check, ChevronDown, CircleHelp, Clock3, Cpu,
-  Droplets, Gauge, LayoutDashboard, LogOut, Plus, Search, Settings2, ShieldCheck,
-  Trash2, X
+  Droplets, Gauge, LayoutDashboard, LoaderCircle, LogOut, Plus, Search, Settings2,
+  ShieldCheck, Trash2, Wifi, WifiOff, X
 } from "lucide-react";
 import { api } from "./api";
-import type { CommandLog, Equipment, EquipmentType, Network, User } from "./types";
+import type { CommandLog, ConnectivityResult, Equipment, EquipmentType, Network, User } from "./types";
 
 const sections: { id: "HOME" | EquipmentType; label: string; icon: typeof LayoutDashboard }[] = [
   { id: "HOME", label: "Home", icon: LayoutDashboard },
@@ -38,6 +38,8 @@ function App() {
   const [networkId, setNetworkId] = useState("");
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [history, setHistory] = useState<CommandLog[]>([]);
+  const [connectivity, setConnectivity] = useState<Record<string, ConnectivityResult>>({});
+  const [checking, setChecking] = useState<Record<string, boolean>>({});
   const [section, setSection] = useState<"HOME" | EquipmentType>("HOME");
   const [query, setQuery] = useState("");
   const [dialog, setDialog] = useState(false);
@@ -93,6 +95,8 @@ function App() {
     setNetworks([]);
     setEquipment([]);
     setHistory([]);
+    setConnectivity({});
+    setChecking({});
   }
 
   async function signIn(event: FormEvent) {
@@ -137,6 +141,11 @@ function App() {
         method: editing ? "PUT" : "POST",
         body: JSON.stringify(payload)
       });
+      if (editing) setConnectivity((current) => {
+        const next = { ...current };
+        delete next[editing.id];
+        return next;
+      });
       setDialog(false);
       setNotice(editing ? "Equipamento atualizado." : "Equipamento cadastrado.");
       await load();
@@ -151,6 +160,11 @@ function App() {
     if (!window.confirm(`Excluir "${item.name}" e seu histórico de comandos?`)) return;
     try {
       await request(`/equipments/${item.id}`, { method: "DELETE" });
+      setConnectivity((current) => {
+        const next = { ...current };
+        delete next[item.id];
+        return next;
+      });
       setNotice("Equipamento excluído.");
       await load();
     } catch (caught) {
@@ -175,6 +189,19 @@ function App() {
       setError(caught instanceof Error ? caught.message : "Falha ao enviar a solicitação.");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function checkEquipment(item: Equipment) {
+    setChecking((current) => ({ ...current, [item.id]: true }));
+    setError("");
+    try {
+      const result = await request<ConnectivityResult>(`/equipments/${item.id}/connectivity`, { method: "POST" });
+      setConnectivity((current) => ({ ...current, [item.id]: result }));
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Não foi possível verificar o equipamento.");
+    } finally {
+      setChecking((current) => ({ ...current, [item.id]: false }));
     }
   }
 
@@ -210,7 +237,7 @@ function App() {
           </button>
         ))}</nav>
         <div className="sidebar-bottom">
-          <div className="network-status"><span className="online-dot" /><div><b>Rede conectada</b><small>Monitoramento ativo</small></div></div>
+          <div className="network-status"><Wifi size={16} /><div><b>Rede selecionada</b><small>Verificação manual</small></div></div>
           <div className="profile"><div className="avatar">{(user?.name ?? "U").slice(0, 1).toUpperCase()}</div><div className="profile-info"><b>{user?.name ?? "Usuário"}</b><small>{user?.email}</small></div><button className="icon-button" title="Sair" onClick={logout}><LogOut size={16} /></button></div>
         </div>
       </aside>
@@ -218,7 +245,7 @@ function App() {
       <main className="main-area">
         <header className="topbar">
           <div className="breadcrumbs">Painel <span>/</span> <b>{activeSection.label}</b></div>
-          <label className="network-select"><span>REDE</span><select aria-label="Rede ativa" value={networkId} onChange={(e) => setNetworkId(e.target.value)}>{networks.map((network) => <option key={network.id} value={network.id}>{network.name}</option>)}</select><ChevronDown size={14} /></label>
+          <label className="network-select"><span>REDE</span><select aria-label="Rede ativa" value={networkId} onChange={(e) => { setConnectivity({}); setNetworkId(e.target.value); }}>{networks.map((network) => <option key={network.id} value={network.id}>{network.name}</option>)}</select><ChevronDown size={14} /></label>
         </header>
         <div className="page-content">
           <div className="page-heading">
@@ -237,11 +264,11 @@ function App() {
 
           <section className="panel">
             <div className="panel-heading">
-              <div><h2>{section === "HOME" ? "Equipamentos" : `Dispositivos · ${activeSection.label}`}</h2><p className="muted">{visibleEquipment.length} {visibleEquipment.length === 1 ? "dispositivo cadastrado" : "dispositivos cadastrados"}</p></div>
+              <div><h2>{section === "HOME" ? "Equipamentos" : `Dispositivos · ${activeSection.label}`}</h2><p className="muted">{visibleEquipment.length} {visibleEquipment.length === 1 ? "dispositivo cadastrado" : "dispositivos cadastrados"} · teste de conexão TCP a partir do servidor</p></div>
               <div className="searchbox"><Search size={16} /><input value={query} placeholder="Buscar por nome ou IP..." onChange={(e) => setQuery(e.target.value)} /></div>
             </div>
             {visibleEquipment.length ? <div className="equipment-grid">{visibleEquipment.map((item) => (
-              <EquipmentCard key={item.id} item={item} busy={busy} onEdit={openEdit} onDelete={removeEquipment} onCommand={sendCommand} />
+              <EquipmentCard key={item.id} item={item} busy={busy} checking={checking[item.id] ?? false} connectivity={connectivity[item.id]} onCheck={checkEquipment} onEdit={openEdit} onDelete={removeEquipment} onCommand={sendCommand} />
             ))}</div> : <EmptyState onCreate={() => openCreate(section === "HOME" ? undefined : section)} />}
           </section>
 
@@ -272,16 +299,27 @@ function SummaryCard({ label, value, icon: Icon, note }: { label: string; value:
   return <div className="summary-card"><div className="summary-top"><span>{label}</span><span className="summary-icon"><Icon size={17} /></span></div><strong>{value.toString().padStart(2, "0")}</strong><small>{note}</small></div>;
 }
 
-function EquipmentCard({ item, busy, onEdit, onDelete, onCommand }: {
-  item: Equipment; busy: boolean; onEdit: (item: Equipment) => void;
+function EquipmentCard({ item, busy, checking, connectivity, onCheck, onEdit, onDelete, onCommand }: {
+  item: Equipment; busy: boolean; checking: boolean; connectivity?: ConnectivityResult;
+  onCheck: (item: Equipment) => void; onEdit: (item: Equipment) => void;
   onDelete: (item: Equipment) => void; onCommand: (item: Equipment) => void;
 }) {
   const Icon = item.type === "AIR_SENSOR" ? AirVent : item.type === "MACHINE_MODULE" ? Cpu : Droplets;
   const executable = item.type !== "DOSER";
   const path = item.type === "AIR_SENSOR" ? "/airon1" : "/lb";
+  const ConnectivityIcon = checking ? LoaderCircle : connectivity?.online ? Wifi : WifiOff;
+  const connectivityLabel = checking
+    ? "Verificando..."
+    : connectivity?.online
+      ? `Na rede · ${connectivity.responseTimeMs} ms`
+      : connectivity
+        ? "Sem resposta"
+        : "Não verificado";
   return <article className="equipment-card">
     <div className="equipment-card-top"><div className={`device-icon ${item.type.toLowerCase()}`}><Icon size={20} /></div><span className="device-type">{typeLabels[item.type]}</span><div className="card-actions"><button className="icon-button" title="Editar" onClick={() => onEdit(item)}><Settings2 size={16} /></button><button className="icon-button danger-hover" title="Excluir" onClick={() => onDelete(item)}><Trash2 size={16} /></button></div></div>
-    <h3>{item.name}</h3><p className="device-address"><span className="online-dot" />{item.ip}<span className="port">:{item.port}</span></p>
+    <h3>{item.name}</h3><p className="device-address">{item.ip}<span className="port">:{item.port}</span></p>
+    <div className={`connectivity-status ${checking ? "checking" : connectivity ? connectivity.online ? "online" : "offline" : "unknown"}`} aria-live="polite" title="Verificação TCP feita pelo servidor da aplicação. Um resultado positivo indica apenas que a porta aceita conexão."><ConnectivityIcon size={15} className={checking ? "spin" : ""} /><span>{connectivityLabel}</span>{connectivity && !checking && <small>{new Date(connectivity.checkedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</small>}</div>
+    <button className="button connectivity-button" onClick={() => onCheck(item)} disabled={checking}><Wifi size={15} /> {checking ? "Verificando..." : "Verificar rede"}</button>
     {executable ? <button className="button command-button" onClick={() => onCommand(item)} disabled={busy}><ArrowUpRight size={15} /> Enviar GET <code>{path}</code></button> : <div className="doser-locked"><ShieldCheck size={15} /> Comandos indisponíveis</div>}
   </article>;
 }

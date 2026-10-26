@@ -29,10 +29,13 @@ O frontend encaminha `/api` para `http://localhost:3000`. O backend exige um `JW
 
 - Navegação Home, Sensor de ar, Módulo de máquina e Dosadoras.
 - Cadastro, edição e remoção de equipamentos por rede, com nome, tipo, IPv4 e porta.
+- Verificação manual e individual de conectividade TCP para o IP e porta cadastrados, com resultado e tempo de resposta; a checagem exige membership na rede e não varre outros endereços.
 - Login com senha armazenada em hash e token JWT; cada operação de rede valida o membership do usuário.
 - Solicitações HTTP GET de rota fixa: sensores de ar usam `/airon1`, módulos de máquina usam `/lb`. Endereço é construído a partir de IPv4 e porta validados, nunca de uma URL fornecida pelo cliente. O timeout é de 5 segundos.
 - Histórico de usuário, equipamento, rota, status, duração e falhas. A API mantém até 100 registros no retorno de atividade.
 - Dosadoras podem ser cadastradas, mas não possuem endpoint nem controle de envio de comandos.
+
+A verificação de conectividade confirma apenas se a porta TCP configurada aceita conexão a partir do servidor da API. Ela não confirma que o equipamento está funcionando corretamente nem que seu protocolo de aplicação está disponível. Para dosadoras, não use esse resultado como confirmação de suporte a comandos.
 
 ## Escopo e confirmações pendentes
 
@@ -42,4 +45,3 @@ O seed cria um usuário administrador e a rede inicial. Defina credenciais exclu
 
 - `npm test` executa os testes unitários da API.
 - `npm run build` compila API e frontend.
-
