@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: equipamentos
+      POSTGRES_PASSWORD: equipamentos
+      POSTGRES_DB: equipamentos
+    ports:
+      - "5432:5432"
+    volumes:
+      - equipamentos-postgres:/var/lib/postgresql/data
+
+volumes:
+  equipamentos-postgres:
+

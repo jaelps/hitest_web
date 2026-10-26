@@ -1,0 +1,86 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EquipmentType {
+  AIR_SENSOR
+  MACHINE_MODULE
+  DOSER
+}
+
+enum MembershipRole {
+  ADMIN
+  OPERATOR
+  VIEWER
+}
+
+model User {
+  id          String               @id @default(cuid())
+  email       String               @unique
+  password    String
+  name        String
+  memberships NetworkMembership[]
+  commands    CommandLog[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model Network {
+  id          String               @id @default(cuid())
+  name        String
+  memberships NetworkMembership[]
+  equipments  Equipment[]
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model NetworkMembership {
+  userId    String
+  networkId String
+  role      MembershipRole @default(OPERATOR)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  network   Network        @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  createdAt DateTime       @default(now())
+
+  @@id([userId, networkId])
+  @@index([networkId])
+}
+
+model Equipment {
+  id        String        @id @default(cuid())
+  name      String
+  type      EquipmentType
+  ip        String
+  port      Int           @default(80)
+  networkId String
+  network   Network       @relation(fields: [networkId], references: [id], onDelete: Cascade)
+  commands  CommandLog[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([networkId, type])
+}
+
+model CommandLog {
+  id             String   @id @default(cuid())
+  equipmentId    String
+  userId         String
+  action         String
+  path           String
+  success        Boolean
+  statusCode     Int?
+  durationMs     Int
+  errorMessage   String?
+  equipment      Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  user           User      @relation(fields: [userId], references: [id], onDelete: Restrict)
+  createdAt      DateTime  @default(now())
+
+  @@index([equipmentId, createdAt])
+  @@index([userId, createdAt])
+}
+

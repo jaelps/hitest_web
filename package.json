@@ -1,0 +1,17 @@
+{
+  "name": "controle-equipamentos",
+  "private": true,
+  "workspaces": [
+    "apps/api",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev": "concurrently -k -n api,web -c blue,green \"npm run dev -w @equipamentos/api\" \"npm run dev -w @equipamentos/web\"",
+    "build": "npm run build -w @equipamentos/api && npm run build -w @equipamentos/web",
+    "test": "npm run test -w @equipamentos/api"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
+
