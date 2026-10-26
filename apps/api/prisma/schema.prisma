@@ -3,20 +3,8 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
-}
-
-enum EquipmentType {
-  AIR_SENSOR
-  MACHINE_MODULE
-  DOSER
-}
-
-enum MembershipRole {
-  ADMIN
-  OPERATOR
-  VIEWER
 }
 
 model User {
@@ -42,7 +30,7 @@ model Network {
 model NetworkMembership {
   userId    String
   networkId String
-  role      MembershipRole @default(OPERATOR)
+  role      String         @default("OPERATOR")
   user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   network   Network        @relation(fields: [networkId], references: [id], onDelete: Cascade)
   createdAt DateTime       @default(now())
@@ -54,7 +42,7 @@ model NetworkMembership {
 model Equipment {
   id        String        @id @default(cuid())
   name      String
-  type      EquipmentType
+  type      String
   ip        String
   port      Int           @default(80)
   networkId String
@@ -83,4 +71,3 @@ model CommandLog {
   @@index([equipmentId, createdAt])
   @@index([userId, createdAt])
 }
-

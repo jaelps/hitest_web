@@ -6,3 +6,5 @@ apps/api/.env
 apps/web/.env
 coverage/
 *.tsbuildinfo
+apps/api/prisma/dev.db
+apps/api/prisma/dev.db-journal

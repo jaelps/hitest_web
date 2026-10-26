@@ -1,27 +1,45 @@
 # HiTest · Controle de equipamentos
 
-Projeto inicial de uma aplicação web para cadastro e monitoramento de equipamentos industriais. O monólito modular usa React + TypeScript + Vite, NestJS + TypeScript, Prisma e PostgreSQL.
+Projeto inicial de uma aplicação web para cadastro e monitoramento de equipamentos industriais. O monólito modular usa React + TypeScript + Vite, NestJS + TypeScript e Prisma. O banco padrão é SQLite, sem serviço externo; PostgreSQL com Docker está disponível como alternativa.
+
+## Início rápido no Windows
+
+Consulte [`INICIAR.md`](INICIAR.md). Para uma máquina sem suporte ao Docker, execute `INSTALAR.bat`: o projeto usa SQLite em um arquivo local, sem precisar de servidor de banco ou virtualização. O instalador prepara o banco e inicia a aplicação automaticamente. Node.js LTS é o único requisito de runtime instalado.
 
 ## Requisitos
 
-- Node.js 20 ou superior e npm
-- Docker Desktop (ou PostgreSQL 16 acessível)
+- Node.js 20 ou superior e npm para execução manual.
+- SQLite é fornecido pelo Prisma e não requer instalação separada.
+- Docker Desktop e PostgreSQL são opcionais para quem escolher essa alternativa.
 
-## Executar localmente
+## Executar localmente sem Docker
 
 1. Na raiz, instale as dependências: `npm install`.
-2. Inicie o banco: `docker compose up -d postgres`.
-3. Crie `apps/api/.env` a partir de `apps/api/.env.example`, defina `JWT_SECRET` com pelo menos 32 caracteres e configure as credenciais de seed.
-4. Gere o cliente e aplique a primeira migração:
+2. Crie `apps/api/.env` a partir de `apps/api/.env.example`, defina `JWT_SECRET` com pelo menos 32 caracteres e configure as credenciais de seed.
+3. Gere o cliente e aplique a primeira migração:
 
    ```powershell
    npm run prisma:generate -w @equipamentos/api
-   npm run prisma:migrate -w @equipamentos/api -- --name init
+   npm run prisma:migrate -w @equipamentos/api
    npm run prisma:seed -w @equipamentos/api
    ```
 
-5. Inicie frontend e backend: `npm run dev`.
-6. Acesse http://localhost:5173 e entre com `SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD`.
+4. Inicie frontend e backend: `npm run dev`.
+5. Acesse http://localhost:5173 e entre com `SEED_ADMIN_EMAIL` e `SEED_ADMIN_PASSWORD`.
+
+O banco SQLite fica em `apps/api/prisma/dev.db` e é inicializado automaticamente pela migração Prisma.
+
+## Alternativa PostgreSQL com Docker
+
+Para computadores compatíveis, o projeto mantém uma configuração opcional de PostgreSQL em `apps/api/prisma/postgresql/schema.prisma`:
+
+```powershell
+docker compose up -d postgres
+# Configure DATABASE_URL no arquivo apps/api/.env para a URL PostgreSQL
+npm run prisma:generate:postgres -w @equipamentos/api
+npm run prisma:migrate:postgres -w @equipamentos/api
+npm run prisma:seed -w @equipamentos/api
+```
 
 O frontend encaminha `/api` para `http://localhost:3000`. O backend exige um `JWT_SECRET` forte, expõe a API em `/api` e aceita a origem `http://localhost:5173` por padrão. Em produção, configure segredos, credenciais, CORS, TLS, firewall e política de backup apropriados.
 

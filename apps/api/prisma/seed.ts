@@ -1,4 +1,4 @@
-import { PrismaClient, MembershipRole } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -26,8 +26,8 @@ async function main() {
   });
   await prisma.networkMembership.upsert({
     where: { userId_networkId: { userId: user.id, networkId: network.id } },
-    update: { role: MembershipRole.ADMIN },
-    create: { userId: user.id, networkId: network.id, role: MembershipRole.ADMIN }
+    update: { role: "ADMIN" },
+    create: { userId: user.id, networkId: network.id, role: "ADMIN" }
   });
 }
 

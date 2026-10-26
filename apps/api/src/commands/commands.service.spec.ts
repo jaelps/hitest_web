@@ -1,5 +1,4 @@
 import { BadRequestException } from "@nestjs/common";
-import { EquipmentType } from "@prisma/client";
 import { createServer, type Server } from "node:http";
 import { CommandsService } from "./commands.service";
 
@@ -26,7 +25,7 @@ describe("CommandsService", () => {
   });
 
   it("rejects actions that do not match the equipment type", async () => {
-    equipment.findAuthorizedEquipment.mockResolvedValue({ type: EquipmentType.DOSER });
+    equipment.findAuthorizedEquipment.mockResolvedValue({ type: "DOSER" });
     await expect(service.execute("user", "doser", "AIR_SENSOR_REQUEST")).rejects.toBeInstanceOf(BadRequestException);
     expect(prisma.commandLog.create).not.toHaveBeenCalled();
   });
@@ -44,7 +43,7 @@ describe("CommandsService", () => {
     if (!address || typeof address === "string") throw new Error("Could not start test server.");
     equipment.findAuthorizedEquipment.mockResolvedValue({
       id: "sensor",
-      type: EquipmentType.AIR_SENSOR,
+      type: "AIR_SENSOR",
       ip: "127.0.0.1",
       port: address.port
     });
@@ -71,7 +70,7 @@ describe("CommandsService", () => {
     if (!address || typeof address === "string") throw new Error("Could not start test server.");
     equipment.findAuthorizedEquipment.mockResolvedValue({
       id: "module",
-      type: EquipmentType.MACHINE_MODULE,
+      type: "MACHINE_MODULE",
       ip: "127.0.0.1",
       port: address.port
     });

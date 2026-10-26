@@ -1,5 +1,7 @@
-import { EquipmentType } from "@prisma/client";
-import { IsEnum, IsIP, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
+import { IsIn, IsIP, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength } from "class-validator";
+
+export const EQUIPMENT_TYPES = ["AIR_SENSOR", "MACHINE_MODULE", "DOSER"] as const;
+export type EquipmentType = (typeof EQUIPMENT_TYPES)[number];
 
 export class CreateEquipmentDto {
   @IsString()
@@ -7,7 +9,7 @@ export class CreateEquipmentDto {
   @MaxLength(100)
   name!: string;
 
-  @IsEnum(EquipmentType)
+  @IsIn(EQUIPMENT_TYPES)
   type!: EquipmentType;
 
   @IsIP(4)
@@ -28,7 +30,7 @@ export class UpdateEquipmentDto {
   name?: string;
 
   @IsOptional()
-  @IsEnum(EquipmentType)
+  @IsIn(EQUIPMENT_TYPES)
   type?: EquipmentType;
 
   @IsOptional()
@@ -41,4 +43,3 @@ export class UpdateEquipmentDto {
   @Max(65535)
   port?: number;
 }
-

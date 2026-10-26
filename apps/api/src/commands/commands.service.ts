@@ -1,13 +1,13 @@
-import { EquipmentType } from "@prisma/client";
 import { BadRequestException, Injectable } from "@nestjs/common";
 import * as http from "node:http";
 import { EquipmentService } from "../equipment/equipment.service";
+import { EquipmentType } from "../equipment/equipment.dto";
 import { PrismaService } from "../prisma/prisma.service";
 import { CommandAction } from "./commands.dto";
 
 const COMMANDS: Record<CommandAction, { type: EquipmentType; path: string }> = {
-  AIR_SENSOR_REQUEST: { type: EquipmentType.AIR_SENSOR, path: "/airon1" },
-  MACHINE_MODULE_REQUEST: { type: EquipmentType.MACHINE_MODULE, path: "/lb" }
+  AIR_SENSOR_REQUEST: { type: "AIR_SENSOR", path: "/airon1" },
+  MACHINE_MODULE_REQUEST: { type: "MACHINE_MODULE", path: "/lb" }
 };
 
 @Injectable()
@@ -73,4 +73,3 @@ export class CommandsService {
     });
   }
 }
-

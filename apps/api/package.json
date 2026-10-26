@@ -9,7 +9,9 @@
     "test": "jest --runInBand",
     "test:watch": "jest --watch",
     "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate": "prisma migrate dev --name init",
+    "prisma:generate:postgres": "prisma generate --schema prisma/postgresql/schema.prisma",
+    "prisma:migrate:postgres": "prisma migrate dev --schema prisma/postgresql/schema.prisma --name init",
     "prisma:seed": "prisma db seed"
   },
   "dependencies": {
