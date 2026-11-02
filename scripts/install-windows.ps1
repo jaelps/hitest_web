@@ -95,8 +95,18 @@ try {
 
   Push-Location $ProjectRoot
   try {
-    Write-Host "Instalando as dependencias do projeto..."
-    Invoke-Checked -Executable "npm" -Arguments @("install")
+    $dependencyCommands = @(
+      "node_modules\.bin\prisma.cmd",
+      "node_modules\.bin\nest.cmd",
+      "node_modules\.bin\vite.cmd"
+    ) | ForEach-Object { Join-Path $ProjectRoot $_ }
+    if (@($dependencyCommands | Where-Object { -not (Test-Path $_) }).Count -gt 0) {
+      Write-Host "Instalando as dependencias do projeto..."
+      Invoke-Checked -Executable "npm" -Arguments @("install")
+    }
+    else {
+      Write-Host "As dependencias do projeto ja estao instaladas; pulando npm install."
+    }
 
     if (-not (Test-Path $EnvironmentFile)) {
       Write-Host "Configure o primeiro usuario administrador."
